@@ -108,7 +108,7 @@ async def download_bunch(game_ids: Iterable[int]) -> List[File]:
     files = [
         await get_file_info(file)
         for file in r
-        if file.headers.get("content-type") == "application/force-download"
+        if file and file.headers.get("content-type") == "application/force-download"
     ]
     return [x for x in files if x]
 
