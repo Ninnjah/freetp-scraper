@@ -95,13 +95,17 @@ async def download_file(game_id: int) -> Optional[File]:
 
 
 async def download_bunch(game_ids: Iterable[int]) -> List[File]:
-    file_url = ["https://freetp.org/getfile-{game_id}".format(game_id=x) for x in game_ids]
-    timeout = 5
+    file_url = ["https://freetp.org/engine/download.php?id={game_id}".format(game_id=x) for x in game_ids]
 
     async with AsyncClient() as client:
-        raw_files = asyncio.gather(*[request(client, url) for url in file_url])
+        r = await asyncio.gather(*[request(client, url) for url in file_url])
 
-    return raw_files
+    files = [
+        await get_file_info(file)
+        for file in r
+        if file.headers.get("content-type") == "application/force-download"
+    ]
+    return [x for x in files if x]
 
 
 async def main():
@@ -113,13 +117,10 @@ async def main():
     db_session = await create_engine(environ.get("DATABASE_URL"))
 
     logger.info("Creating tasks")
-    # files = await asyncio.gather(*[download_file(x) for x in range(8790, 10000)])
-    # files = [x for x in files if x]
 
-    for x in range(10, 8789):
-        file = await download_file(x)
-        if not file:
-            continue
+    chunk = 10
+    for x in range(1, 10000):
+        files = await download_bunch(range(x, x + chunk))
 
         async with db_session() as session:
             async with session.begin():
@@ -146,7 +147,7 @@ async def main():
                 await session.execute(
                     stmt, [
                         {"id": file.id, "name": file.name, "ext": file.ext, "url": file.url, "size": file.size}
-                        for file in [file]
+                        for file in files
                     ]
                 )
                 await session.commit()
