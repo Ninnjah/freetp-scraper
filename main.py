@@ -54,6 +54,7 @@ async def get_file_info(r: Response) -> Optional[File]:
         logger.info(f"{game_id} - NOT FOUND")
         return None
     name = name.group(1)
+    name = re.sub(r"\[FreeTP\.Org\]", "", name)
 
     ext = name.split(".")[-1]
     if not ext:
@@ -85,7 +86,7 @@ async def download_file(game_id: int) -> Optional[File]:
 
     async with AsyncClient() as client:
         r = await request(client, file_url)
-    if not r:
+    if not r.headers.get("content-type") == "application/force-download":
         return
 
     file = await get_file_info(r)
@@ -115,7 +116,7 @@ async def main():
     # files = await asyncio.gather(*[download_file(x) for x in range(8790, 10000)])
     # files = [x for x in files if x]
 
-    for x in range(7, 8789):
+    for x in range(10, 8789):
         file = await download_file(x)
         if not file:
             continue
