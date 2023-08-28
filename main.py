@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 
 from torrentool.api import Torrent
 from torrentool.bencode import Bencode
+from torrentool.exceptions import BencodeDecodingError
 
 from models.file import File
 
@@ -61,8 +62,12 @@ async def get_file_info(r: Response) -> Optional[File]:
         return None
 
     if ext == "torrent":
-        torrent = Torrent(Bencode.decode(r.content, byte_keys={'pieces'}))
-        size = torrent.total_size
+        try:
+            torrent = Torrent(Bencode.decode(r.content, byte_keys={'pieces'}))
+        except BencodeDecodingError:
+            size = None
+        else:
+            size = torrent.total_size
     else:
         try:
             size = int(r.headers.get("content-length"))
