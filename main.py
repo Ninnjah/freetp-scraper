@@ -119,7 +119,7 @@ async def main():
     logger.info("Creating tasks")
 
     chunk = 10
-    for x in range(1, 10000):
+    for x in range(1, 10000, chunk):
         files = await download_bunch(range(x, x + chunk))
 
         async with db_session() as session:
