@@ -7,6 +7,7 @@ from models.file import File
 
 class UserAdmin(ModelView, model=File):
     column_list = [File.id, File.name, File.ext, File.url, File.size, File.created_at]
+    column_sortable_list = [File.id, File.name, File.ext, File.size, File.created_at]
 
 
 def app_init(app: FastAPI, db_url: str) -> None:
